@@ -1,0 +1,4 @@
+Jul 03, 2015 3:07:08 PM VSMTests.TestLogger1 doSomethingelse
+SEVERE: test1	VSMTests.TestLogger
+Jul 03, 2015 3:07:08 PM VSMTests.TestLogger1 doSomeThingAndLog
+SEVERE: Info1 Log

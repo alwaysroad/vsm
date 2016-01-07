@@ -1,0 +1,1263 @@
+package VSMUtilityClasses;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import jeigen.DenseMatrix;
+import jeigen.SparseMatrixLil;
+import no.uib.cipr.matrix.MatrixEntry;
+import no.uib.cipr.matrix.sparse.FlexCompRowMatrix;
+
+import org.apache.commons.compress.compressors.CompressorException;
+
+import Jama.Matrix;
+import VSMInsideFeatureObjects.InsideNtNumOfWords;
+import VSMOutsideFeatureObjects.OutsideFootNumwordsleft;
+import VSMOutsideFeatureObjects.OutsideFootNumwordsright;
+import VSMSerialization.VSMDictionaryBean;
+import cern.colt.matrix.tdouble.impl.DenseDoubleMatrix2D;
+import edu.berkeley.nlp.syntax.Constituent;
+import edu.berkeley.nlp.syntax.Tree;
+import edu.berkeley.nlp.syntax.Trees.PennTreeReader;
+
+/**
+ * This is a Utility class for the Project Vector Space Modelling
+ * 
+ * @author sameerkhurana10
+ *
+ */
+
+public class VSMUtil {
+
+	private static ArrayList<String> filePaths = new ArrayList<String>();
+	private static int fileNum;
+	private static int index;
+	private static int id;
+
+	/**
+	 * This method needs to be called when extracting the outside features for
+	 * any particular node in the tree. This will be called from inside the loop
+	 * while looping over all the tree nodes. Becaise each node will have its
+	 * own path. The method is written by Dr Shay Cohen
+	 * 
+	 * @param foottoroot
+	 * @param subroot
+	 * @param insideTree
+	 * @return
+	 */
+	public static Stack<Tree<String>> updateFoottorootPath(
+			Stack<Tree<String>> foottoroot, Tree<String> subroot,
+			Tree<String> insideTree,
+			Map<Tree<String>, Constituent<String>> constituentsMap) {
+		foottoroot.push(subroot);
+
+		Tree<String> footTree = insideTree;
+		Constituent<String> footconstituent = constituentsMap.get(footTree);
+
+		if (subroot.equals(footTree)) {
+			return foottoroot;
+		} else {
+			List<Tree<String>> children = subroot.getChildren();
+			for (int i = 0; i < children.size(); i++) {
+				Tree<String> childTree = children.get(i);
+				Constituent<String> childConstituent = constituentsMap
+						.get(childTree);
+				if ((footconstituent.getStart() >= childConstituent.getStart())
+						&& (footconstituent.getEnd() <= childConstituent
+								.getEnd())) {
+					updateFoottorootPath(foottoroot, childTree, insideTree,
+							constituentsMap);
+					break;
+				}
+			}
+		}
+		return foottoroot;
+	}
+
+	/**
+	 * 
+	 * @param tree
+	 * @return
+	 */
+	public static String getTreeString(Tree<String> tree) {
+		if (tree.isPreTerminal()) {
+			return (tree.getLabel() + "->" + tree.getChildren().get(0)
+					.getLabel().toLowerCase());
+		} else {
+			List<Tree<String>> children = tree.getChildren();
+			if (children.size() > 1) {
+				return (tree.getLabel() + "->" + children.get(0).getLabel()
+						+ "," + children.get(1).getLabel());
+			} else {
+				return null;
+			}
+		}
+	}
+
+	public static int getFeatureId(Alphabet source, String feature) {
+
+		int featureid = source.lookupIndex(feature);
+
+		/*
+		 * TODO Commented out for now as we do not have NOTFREQUENT yet, because
+		 * we have not filtered our features yet. Once we filter our features
+		 * then we will have a NOTFREQUENT feature for each Alphabet
+		 */
+
+		if (featureid == -1) {
+
+			featureid = source.lookupIndex("NOTFREQUENT");
+		}
+
+		return featureid;
+	}
+
+	public static int getVocabIndex(Alphabet source, String feature) {
+
+		int featureid = source.lookupIndex(feature);
+
+		/*
+		 * TODO Commented out for now as we do not have NOTFREQUENT yet, because
+		 * we have not filtered our features yet. Once we filter our features
+		 * then we will have a <OOV> feature for each Alphabet
+		 */
+
+		if (featureid == -1) {
+
+			featureid = source.lookupIndex("<OOV>");
+		}
+
+		return featureid;
+	}
+
+	/**
+	 * TODO
+	 * 
+	 * @param URI
+	 * @return
+	 * @throws Exception
+	 */
+	public static PennTreeReader getTreeReader(String URI) throws Exception {
+		InputStreamReader inputData = new InputStreamReader(
+				new FileInputStream(URI), "UTF-8");
+		/*
+		 * Return an iterator that can be used by the FeatureExtractor function
+		 * to iterate over the trees and extract all the features
+		 */
+
+		return new PennTreeReader(inputData);
+	}
+
+	/**
+	 * This method should be called from inside the loop while iterating the
+	 * nodes of a particular tree, so that the length variable can be updated
+	 * for each node, as each node will have a different constituent length
+	 * 
+	 * @param constituent
+	 */
+	public static void setConstituentLength(Constituent<String> constituent) {
+		/*
+		 * Just setting the static variable
+		 */
+
+		InsideNtNumOfWords.length = constituent.getLength();
+
+	}
+
+	/**
+	 * The method that returns the inside feature vector dimensions when passed
+	 * the object store
+	 * 
+	 * @return
+	 */
+	public static int getInsideFeatureVectorDimensions(
+			ArrayList<Alphabet> updatedFilteredDictionary) {
+
+		int vectorDimension = 0;
+
+		/*
+		 * Getting the vector dimensitons of the inside feature vector phi, just
+		 * by adding all the dictionary sizes together
+		 */
+		for (Alphabet dictionary : updatedFilteredDictionary) {
+			vectorDimension += dictionary.size();
+		}
+
+		return vectorDimension;
+
+	}
+
+	/**
+	 * 
+	 * @param parentTree
+	 * @param footTree
+	 * @return
+	 */
+	public static String getStringFromParent(Tree<String> parentTree,
+			Tree<String> footTree) {
+		String feature = null;
+		List<Tree<String>> children = parentTree.getChildren();
+		if (children.size() > 1) {
+			if (children.get(0).equals(footTree)) {
+				// Left foot
+				feature = parentTree.getLabel() + "->"
+						+ children.get(0).getLabel() + "*,"
+						+ children.get(1).getLabel();
+			} else {
+				// right foot
+				feature = parentTree.getLabel() + "->"
+						+ children.get(0).getLabel() + ","
+						+ children.get(1).getLabel() + "*";
+			}
+		} else {
+			feature = "NOTVALID";
+		}
+		return feature;
+	}
+
+	/**
+	 * 
+	 * @param grandparentTree
+	 * @param parentTree
+	 * @param footTree
+	 * @return
+	 */
+	public static String getStringFromGrandparent(Tree<String> grandparentTree,
+			Tree<String> parentTree, Tree<String> footTree) {
+		String feature = null;
+		List<Tree<String>> parents = grandparentTree.getChildren();
+		if (parents.size() > 1) {
+			if (parents.get(0).equals(parentTree)) {
+				feature = grandparentTree.getLabel() + "->("
+						+ getStringFromParent(parentTree, footTree) + "),"
+						+ parents.get(1).getLabel();
+			} else {
+				feature = grandparentTree.getLabel() + "->"
+						+ parents.get(0).getLabel() + ",("
+						+ getStringFromParent(parentTree, footTree) + ")";
+			}
+		} else {
+			feature = "NOTVALID";
+		}
+		return feature;
+	}
+
+	/**
+	 * 
+	 * @param greatgrandparentTree
+	 * @param grandparentTree
+	 * @param parentTree
+	 * @param footTree
+	 * @return
+	 */
+	public static String getStringFromGreatgrandparent(
+			Tree<String> greatgrandparentTree, Tree<String> grandparentTree,
+			Tree<String> parentTree, Tree<String> footTree) {
+
+		String feature = null;
+		List<Tree<String>> grandparents = greatgrandparentTree.getChildren();
+		if (grandparents.size() > 1) {
+			if (grandparents.get(0).equals(grandparentTree)) {
+				feature = greatgrandparentTree.getLabel()
+						+ "->("
+						+ getStringFromGrandparent(grandparentTree, parentTree,
+								footTree) + "),"
+						+ grandparents.get(1).getLabel();
+			} else {
+				feature = greatgrandparentTree.getLabel()
+						+ "->"
+						+ grandparents.get(0).getLabel()
+						+ ",("
+						+ getStringFromGrandparent(grandparentTree, parentTree,
+								footTree) + ")";
+			}
+		} else {
+			feature = "NOTVALID";
+		}
+		return feature;
+	}
+
+	/**
+	 * Have to call this method from inside the while loop that iterates over
+	 * the nodes in a tree
+	 * 
+	 * @param insideTree
+	 * @param constituentsMap
+	 * @param root
+	 * @return
+	 */
+	public static void getNumberOfOutsideWordsRight(Tree<String> insideTree,
+			Map<Tree<String>, Constituent<String>> constituentsMap,
+			Tree<String> root) {
+
+		int numOfWords = 0;
+		/*
+		 * Getting the end of the inside tree
+		 */
+		int footconstituent_end = constituentsMap.get(insideTree).getEnd();
+		/*
+		 * Getting the end of the sentence
+		 */
+		int rootconstituent_end = constituentsMap.get(root).getEnd();
+		/*
+		 * Number of words
+		 */
+		numOfWords = rootconstituent_end - footconstituent_end;
+		/*
+		 * Setting the static variable in the Feature Object class, So now
+		 * everytime we call this method, the variable outsideWordsRight is
+		 * changes in the class and any object accessing this variable will feel
+		 * the change, Object Independent variable
+		 */
+
+		OutsideFootNumwordsright.outsideWordsRight = numOfWords;
+
+	}
+
+	/**
+	 * Have to call this method from inside the while loop that iterates over
+	 * the nodes in the tree, because we will get a different value for each
+	 * node
+	 * 
+	 * @param insideTree
+	 * @param constituentsMap
+	 * @param root
+	 */
+	public static void getNumberOfOutsideWordsLeft(Tree<String> insideTree,
+			Map<Tree<String>, Constituent<String>> constituentsMap,
+			Tree<String> root) {
+
+		int numOfWords = 0;
+		/*
+		 * Getting the start of the inside tree
+		 */
+		int footconstituent_start = constituentsMap.get(insideTree).getStart();
+		/*
+		 * Getting the end of the sentence
+		 */
+		int rootconstituent_start = constituentsMap.get(root).getStart();
+		/*
+		 * Number of words
+		 */
+		numOfWords = footconstituent_start - rootconstituent_start;
+		/*
+		 * Setting the static variable in the Feature Object class, So now every
+		 * time we call this method, the variable outsideWordsRight is changes
+		 * in the class and any object accessing this variable will feel the
+		 * change, Object Independent variable
+		 */
+		OutsideFootNumwordsleft.outsideWordsLeft = numOfWords;
+
+	}
+
+	/**
+	 * The method to get the outside feature vector dimensions
+	 * 
+	 * @return
+	 */
+	public static int getOutsideFeatureVectorDimensions(
+			ArrayList<Alphabet> updatedFilteredDictionary) {
+
+		int vectorDimension = 0;
+
+		/*
+		 * Getting the vector dimension for the inside feature vector phi. The
+		 * dimensionality is just equal to the sum of all the inside features
+		 * that have been extracted from the corpus
+		 */
+		for (Alphabet dictionary : updatedFilteredDictionary) {
+			vectorDimension += dictionary.size();
+		}
+
+		return vectorDimension;
+
+	}
+
+	/**
+	 * 
+	 * @param updatedFilteredDictionary
+	 * @return
+	 */
+	public static int getWordDictionarySize(Alphabet wordDictionary) {
+
+		return wordDictionary.size();
+
+	}
+
+	/**
+	 * Return an array containing all the files in a directory. Needed to
+	 * iterate over the files in the BLLIP Corpus
+	 * 
+	 * @param directoryRoot
+	 * @return
+	 */
+	public static File[] getFiles(String directoryRoot) {
+		File[] files = new File(directoryRoot).listFiles();
+		return files;
+	}
+
+	/**
+	 * The method extracts the tree from the given file path as argument and
+	 * adds it to the file tree.txt
+	 * 
+	 * @param URI
+	 * @throws IOException
+	 * @throws CompressorException
+	 */
+	public static void extractAndAddTrees(String URI) throws IOException,
+			CompressorException {
+		/*
+		 * Updating the file count
+		 */
+		fileNum = fileNum + 1;
+
+		File file = null;
+
+		/*
+		 * Forming the appropriate directory structure
+		 */
+
+		if (fileNum <= 5000) {
+			index = 1;
+			file = new File(
+					"/afs/inf.ed.ac.uk/group/project/vsm/treesreverse/tress_"
+							+ index + "/trees_" + fileNum + ".txt");
+		} else {
+
+			index++;
+			fileNum = 0;
+			fileNum = fileNum + 1;
+			file = new File(
+					"/afs/inf.ed.ac.uk/group/project/vsm/treesreverse/tress_"
+							+ index + "/trees_" + fileNum + ".txt");
+		}
+
+		/*
+		 * Getting the brZ reader from the given brZ file as the argument
+		 */
+		BufferedReader brZ = BLLIPCorpusReader.getBufferedReaderForBZ2File(URI);
+
+		/*
+		 * The code for storing trees extracted from each bz2 file in separate
+		 * files to promote batch online computations instead of batch
+		 */
+
+		/*
+		 * If file does not exist then create one
+		 */
+		if (!file.exists()) {
+			file.getParentFile().mkdirs();
+		}
+
+		/*
+		 * True will ensure that we append the tree to our already existing file
+		 * and not overwrite it
+		 */
+		FileWriter fw = new FileWriter(file.getAbsoluteFile(), true);
+
+		/*
+		 * To write the extracted trees into the file
+		 */
+		BufferedWriter bw = new BufferedWriter(fw);
+		String line = null;
+		boolean flag = false;
+		int count = 0;
+		int count1 = 0;
+		// String alreadyPresent = null;
+
+		while ((line = brZ.readLine()) != null) {
+			/*
+			 * When the line begins with 50 set the flag to true, which means
+			 * that now we can start extracting the trees again, because the
+			 * trees coming after 50 belongs to a new sentence
+			 */
+			String beginning = line.substring(0, 2);
+			if (beginning.equalsIgnoreCase("50") && count1 == 0
+					&& !line.contains("-")) {
+				flag = true;
+				// System.out.println("hi");
+				count1 = 1;
+			}
+
+			/*
+			 * If the flag is true and the line starts with a bracket i.e. it is
+			 * a tree, get the tree. The count should be zero otherwise it means
+			 * that
+			 */
+			if ((flag == true) && (line.charAt(0) == '(')) {
+				// System.out.println(line);
+				bw.write(line);
+				bw.newLine();
+				bw.newLine();
+				count++;
+			}
+
+			/*
+			 * After getting one tree wait for 50 to come. Right now just
+			 * getting the highest probability tree for each sentence because of
+			 * memory constraints. Just change the if condition to 3 or 4 if you
+			 * need more trees. Just getting the top most tree for each sentence
+			 */
+			if (count == 1) {
+				flag = false;
+				/*
+				 * Reseting the count of course
+				 */
+				count = 0;
+				count1 = 0;
+			}
+		}
+		/*
+		 * Closing the resource, to prevent resource leak
+		 */
+		bw.flush();
+		bw.close();
+
+	}
+
+	/**
+	 * The method returns the file paths corresponding to all the directories in
+	 * the corpus. We can iterate over these paths to extract syntax trees
+	 * 
+	 * @param files
+	 * @return
+	 */
+	public static ArrayList<String> getFilePaths(File[] files) {
+		/*
+		 * Iterate over the File array
+		 */
+		for (File file : files) {
+
+			if (!(filePaths.size() == 100000)) {
+
+				if (file.isDirectory()) {
+					// System.out.println("This is a directory Directory: "
+					// + file.getName());
+					/*
+					 * If the file is a directory then make a recursive call
+					 * until we reach the trees
+					 */
+					getFilePaths(file.listFiles()); // Calls same method
+													// again.
+				} else {
+					// System.out
+					// .println("now inside the directory and getting the file: "
+					// + file.getAbsolutePath());
+					/*
+					 * Returning the absolute path of the corpus file from which
+					 * trees need to be extracted
+					 */
+					filePaths.add(file.getAbsolutePath());
+
+				}
+
+			} else {
+				return filePaths;
+			}
+		}
+		return filePaths;
+	}
+
+	/**
+	 * The method that returns the dictionary size given a dictionary
+	 * 
+	 * @param insideFeatureDictionary
+	 * @return
+	 */
+	public static long getDictionarySize(
+			ArrayList<Alphabet> insideFeatureDictionary) {
+		long size = 0;
+		for (Alphabet dictionary : insideFeatureDictionary) {
+			size = size + dictionary.size();
+		}
+		return size;
+	}
+
+	/**
+	 * Utility method to covert sparse matrix to dense matrix
+	 * 
+	 * @param featureMatrix
+	 * @return
+	 */
+	public static Matrix createDenseMatrixJAMA(SparseMatrixLil featureMatrix) {
+		DenseMatrix matrix = featureMatrix.toDense();
+		Matrix x = new Matrix(featureMatrix.rows, featureMatrix.cols);
+		for (int i = 0; i < featureMatrix.rows; i++) {
+			for (int j = 0; j < featureMatrix.cols; j++) {
+				x.set(i, j, matrix.get(i, j));
+			}
+		}
+
+		return x;
+	}
+
+	/**
+	 * The method to serialize the inside and outside matrices
+	 * 
+	 * @param opt
+	 * @return
+	 * @throws ClassNotFoundException
+	 */
+	public static Object[] deserializeCCAVariantsRun(String directoryName)
+			throws ClassNotFoundException {
+
+		Object[] matrixObj = new Object[3];
+
+		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm/syntacticprojectionserobjects/"
+				+ directoryName;
+		File fileDir = new File(fileDirPath);
+		String fileName = fileDir.getAbsolutePath() + "/projectionInside.ser";
+		String fileName1 = fileDir.getAbsolutePath() + "/projectionOutside.ser";
+
+		Matrix Y = null, Z = null;
+
+		try {
+
+			ObjectInput y = new ObjectInputStream(new FileInputStream(fileName));
+			ObjectInput z = new ObjectInputStream(
+					new FileInputStream(fileName1));
+
+			Y = (Matrix) y.readObject();
+			Z = (Matrix) z.readObject();
+
+			System.out
+					.println("=======De-serialized the CCA Variant Run=======");
+		} catch (IOException ioe) {
+			System.out.println(ioe.getMessage());
+		}
+		matrixObj[0] = (Object) Y;
+		matrixObj[1] = (Object) Z;
+		matrixObj[2] = null;
+
+		return matrixObj;
+
+	}
+	
+
+
+	public static Object[] deserializeCCAVariantsRunSem(String directoryName)
+			throws ClassNotFoundException {
+
+		Object[] matrixObj = new Object[3];
+
+		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm/serializedsemanticprojections/"
+				+ directoryName;
+		File fileDir = new File(fileDirPath);
+		String fileName = fileDir.getAbsolutePath() + "/projectionInside.ser";
+		String fileName1 = fileDir.getAbsolutePath() + "/projectionOutside.ser";
+
+		Matrix Y = null, Z = null;
+
+		try {
+
+			ObjectInput y = new ObjectInputStream(new FileInputStream(fileName));
+			ObjectInput z = new ObjectInputStream(
+					new FileInputStream(fileName1));
+
+			Y = (Matrix) y.readObject();
+			Z = (Matrix) z.readObject();
+
+			System.out
+					.println("=======De-serialized the CCA Variant Run=======");
+		} catch (IOException ioe) {
+			System.out.println(ioe.getMessage());
+		}
+		matrixObj[0] = (Object) Y;
+		matrixObj[1] = (Object) Z;
+		matrixObj[2] = null;
+
+		return matrixObj;
+
+	}
+
+	/**
+	 * Method that writes the projection matrix Z(Inside) in a file
+	 * 
+	 * @param matrices
+	 * @param name
+	 * @param count
+	 * @throws IOException
+	 */
+	public static void writeEigenDictInside(Object[] matrices, String name,
+			int count) throws IOException {
+		DenseDoubleMatrix2D dictLMatrix = createDenseMatrixCOLT((Matrix) matrices[0]);
+		double[][] dictL = dictLMatrix.toArray();
+		BufferedWriter writer = null;
+		String eigenDict = "/afs/inf.ed.ac.uk/group/project/vsm/syntacticprojectionstxt/"
+				+ name + "_Z.txt";
+		try {
+			writer = new BufferedWriter(new OutputStreamWriter(
+					new FileOutputStream(eigenDict), "UTF8"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		// double maxInThisDimension = 0;
+		for (int i = 0; i < count; i++) {
+			writer.write(name);
+			writer.write(' ');
+
+			for (int j = 0; j < 50; j++) {
+
+				if (j != 50 - 1) {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write(' ');
+				} else {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write('\n');
+				}
+			}
+		}
+		writer.close();
+	}
+
+	/**
+	 * Method that writes the projection matrix Z in a file
+	 * 
+	 * @param matrices
+	 * @param name
+	 * @param count
+	 * @throws IOException
+	 */
+	public static void writeEigenDictInsideSemantic(Object[] matrices,
+			String name, int count) throws IOException {
+		DenseDoubleMatrix2D dictLMatrix = createDenseMatrixCOLT((Matrix) matrices[0]);
+		double[][] dictL = dictLMatrix.toArray();
+		BufferedWriter writer = null;
+		String eigenDict = "/afs/inf.ed.ac.uk/group/project/vsm/semanticprojectionstxt/"
+				+ name + "_Z.txt";
+		try {
+			writer = new BufferedWriter(new OutputStreamWriter(
+					new FileOutputStream(eigenDict), "UTF8"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		// double maxInThisDimension = 0;
+		for (int i = 0; i < count; i++) {
+			writer.write(name);
+			writer.write(' ');
+
+			for (int j = 0; j < 50; j++) {
+
+				if (j != 50 - 1) {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write(' ');
+				} else {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write('\n');
+				}
+			}
+		}
+		writer.close();
+	}
+
+	/**
+	 * 
+	 * @param matrices
+	 * @param name
+	 * @param count
+	 * @throws IOException
+	 */
+	public static void writeEigenDictOutside(Object[] matrices, String name,
+			int count) throws IOException {
+		DenseDoubleMatrix2D dictLMatrix = createDenseMatrixCOLT((Matrix) matrices[1]);
+		double[][] dictL = dictLMatrix.toArray();
+		BufferedWriter writer = null;
+		String eigenDict = "/afs/inf.ed.ac.uk/group/project/vsm/syntacticprojectionstxt/"
+				+ name + "_Y.txt";
+		try {
+			writer = new BufferedWriter(new OutputStreamWriter(
+					new FileOutputStream(eigenDict, false), "UTF8"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		// double maxInThisDimension = 0;
+		for (int i = 0; i < count; i++) {
+			writer.write(name);
+			writer.write(' ');
+
+			for (int j = 0; j < 50; j++) {
+
+				if (j != 50 - 1) {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write(' ');
+				} else {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write('\n');
+				}
+			}
+		}
+		writer.close();
+	}
+
+	public static void writeEigenDictOutsideSem(Object[] matrices, String name,
+			int count) throws IOException {
+		DenseDoubleMatrix2D dictLMatrix = createDenseMatrixCOLT((Matrix) matrices[1]);
+		double[][] dictL = dictLMatrix.toArray();
+		BufferedWriter writer = null;
+		String eigenDict = "/afs/inf.ed.ac.uk/group/project/vsm/semanticprojectionstxt/"
+				+ name + "_Y.txt";
+		try {
+			writer = new BufferedWriter(new OutputStreamWriter(
+					new FileOutputStream(eigenDict, false), "UTF8"));
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		// double maxInThisDimension = 0;
+		for (int i = 0; i < count; i++) {
+			writer.write(name);
+			writer.write(' ');
+
+			for (int j = 0; j < 50; j++) {
+
+				if (j != 50 - 1) {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write(' ');
+				} else {
+					writer.write(Double.toString(dictL[i][j]));
+					writer.write('\n');
+				}
+			}
+		}
+		writer.close();
+	}
+
+	private static DenseDoubleMatrix2D createDenseMatrixCOLT(Matrix xJama) {
+		DenseDoubleMatrix2D x_omega = new DenseDoubleMatrix2D(
+				xJama.getRowDimension(), xJama.getColumnDimension());
+		for (int i = 0; i < xJama.getRowDimension(); i++) {
+			for (int j = 0; j < xJama.getColumnDimension(); j++) {
+				x_omega.set(i, j, xJama.get(i, j));
+			}
+		}
+		return x_omega;
+	}
+
+	/*
+	 * Some text pre-processing being done here, nothing fancy!
+	 */
+	@SuppressWarnings("unchecked")
+	public static ArrayList<String> normalize(ArrayList<String> s) {
+		ArrayList<String> norm = new ArrayList<String>();
+		Iterator<String> itNorm = s.iterator();
+		while (itNorm.hasNext()) {
+			String s1 = itNorm.next();
+			if (s1.matches("[0-9]+|[0-9]+\\.[0-9]+|[0-9]+[0-9,]+"))
+				norm.add("<num>");
+			else
+				norm.add(s1);
+		}
+
+		return (ArrayList<String>) norm.clone();
+	}
+
+	/**
+	 * Method to add the words to the dictionary
+	 * 
+	 * @param wordList
+	 */
+	public static void addToDictionary(ArrayList<String> wordList,
+			Alphabet wordDictionary) {
+
+		/*
+		 * Adding words to the dictionary
+		 */
+		for (String word : wordList) {
+			wordDictionary.lookupIndex(word);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public static ArrayList<String> lowercase(ArrayList<String> s) {
+		ArrayList<String> lower = new ArrayList<String>();
+		Iterator<String> itlower = s.iterator();
+		while (itlower.hasNext())
+			lower.add(itlower.next().toLowerCase().trim());
+
+		return (ArrayList<String>) lower.clone();
+	}
+
+	/**
+	 * Removes duplicates from the array if we do not want counts
+	 * 
+	 * @param arr
+	 * @return
+	 */
+	public static int[] removeDuplicates(int[] arr) {
+		Set<Integer> alreadyPresent = new HashSet<>();
+		int[] whitelist = new int[arr.length];
+		int i = 0;
+
+		for (int element : arr) {
+			if (alreadyPresent.add(element)) {
+				whitelist[i++] = element;
+			}
+		}
+
+		return Arrays.copyOf(whitelist, i);
+	}
+
+	/**
+	 * Create dense matrix MTJ from JAMA
+	 * 
+	 * @param xomega
+	 * @return
+	 */
+	public static no.uib.cipr.matrix.DenseMatrix createDenseMatrixMTJ(
+			Matrix xomega) {
+		no.uib.cipr.matrix.DenseMatrix xMTJ = new no.uib.cipr.matrix.DenseMatrix(
+				xomega.getRowDimension(), xomega.getColumnDimension());
+
+		for (int i = 0; i < xomega.getRowDimension(); i++) {
+			for (int j = 0; j < xomega.getColumnDimension(); j++) {
+				xMTJ.set(i, j, xomega.get(i, j));
+			}
+		}
+		return xMTJ;
+	}
+
+	/**
+	 * Getting the norm of a vector used for cosine similarity
+	 * 
+	 * @param data
+	 * @return
+	 */
+	public static double norm2(double[] data) {
+		double norm = 0;
+		for (int i = 0; i < data.length; ++i)
+			norm += data[i] * data[i];
+		return Math.sqrt(norm);
+	}
+
+	/**
+	 * Getting the gold standard similarity scores
+	 * 
+	 * @return
+	 */
+	public static HashMap<Integer, Double> getGoldStandard() {
+		String sickTrainingSet = "/disk/gpfs/scohen/embeddings/datasets/dsm/SICK_train.txt";
+
+		// String sickTrainingSet =
+		// "/Users/sameerkhurana10/training_corpus/SICK_train.txt";
+
+		HashMap<Integer, Double> goldStandard = new LinkedHashMap<Integer, Double>();
+
+		Pattern regex = Pattern.compile("(\\d+(?:\\.\\d+))");
+
+		BufferedReader br = null;
+
+		try {
+			String sCurrentLine;
+
+			br = new BufferedReader(new FileReader(sickTrainingSet));
+
+			int count = 0;
+			while ((sCurrentLine = br.readLine()) != null) {
+
+				System.out.println("***Reading the file****");
+				count++;
+				/*
+				 * Ignoring the first line
+				 */
+				if (count > 1) {
+					// System.out.println(sCurrentLine);
+
+					Matcher matcher = regex.matcher(sCurrentLine);
+
+					while (matcher.find()) {
+						// System.out.println(matcher.group());
+						goldStandard.put((count - 1),
+								Double.parseDouble(matcher.group()));
+					}
+
+				}
+			}
+		} catch (IOException e) {
+
+			e.printStackTrace();
+
+		} finally {
+
+			try {
+
+				if (br != null)
+					br.close();
+
+			} catch (IOException ex) {
+
+				ex.printStackTrace();
+
+			}
+		}
+
+		System.out.println("****Gold Standard***" + goldStandard);
+
+		return goldStandard;
+	}
+
+	public static void writeFeatureDictionary(VSMDictionaryBean dictionaryBean,
+			String nonTerminal) {
+		File file = new File(
+				"/afs/inf.ed.ac.uk/group/project/vsm/featuredictionary/"
+						+ nonTerminal + "/");
+		ArrayList<Alphabet> insideDictionary = dictionaryBean
+				.getInsideFeatureDictionary();
+		ArrayList<Alphabet> outsideDictionary = dictionaryBean
+				.getOutsideFeatureDictionary();
+
+		/*
+		 * Writing the inside and outside feature dictionary to a file
+		 */
+		PrintWriter writerIn = null;
+		PrintWriter writerOut = null;
+		try {
+			writerIn = new PrintWriter(file.getAbsolutePath()
+					+ "/insidedict.txt");
+			writerOut = new PrintWriter(file.getAbsolutePath()
+					+ "/outsidedict.txt");
+
+			/*
+			 * INside dictionary
+			 */
+			for (Alphabet dictionary : insideDictionary) {
+				Object[] features = dictionary.reverseMap.getValues();
+				for (Object feature : features) {
+					String insideFeature = (String) feature;
+					writerIn.println(insideFeature);
+
+				}
+			}
+
+			/*
+			 * Outside dictionary
+			 */
+			for (Alphabet dictionary : outsideDictionary) {
+
+				Object[] features = dictionary.reverseMap.getValues();
+				for (Object feature : features) {
+					String outsideFeature = (String) feature;
+					writerOut.println(outsideFeature);
+
+				}
+
+			}
+		} catch (FileNotFoundException e) {
+			System.out.println("***Exception while writing the dictionary***"
+					+ e);
+		} finally {
+			System.out.println("****Written the dictionaries****");
+			writerIn.close();
+			writerOut.close();
+		}
+
+	}
+
+	/**
+	 * A useful function here
+	 * 
+	 * @param xjeig
+	 * @return
+	 */
+	public static FlexCompRowMatrix createSparseMatrixMTJFromJeigen(
+			SparseMatrixLil xjeig) {
+		FlexCompRowMatrix x = new FlexCompRowMatrix(xjeig.rows, xjeig.cols);
+
+		int count = xjeig.getSize();
+		for (int i = 0; i < count; i++) {
+			int row = xjeig.getRowIdx(i);
+			int col = xjeig.getColIdx(i);
+			double value = xjeig.getValue(i);
+			// if(value!=0)
+			x.set(row, col, value);
+		}
+
+		return x;
+	}
+
+	public static SparseMatrixLil createJeigenMatrix(FlexCompRowMatrix xmtj) {
+		SparseMatrixLil x = new SparseMatrixLil(xmtj.numRows(),
+				xmtj.numColumns());
+
+		for (MatrixEntry e : xmtj) {
+			x.append(e.row(), e.column(), e.get());
+		}
+
+		System.out.println("Size:" + " " + xmtj.numRows() + " "
+				+ xmtj.numColumns() + " " + xmtj.numRows() * xmtj.numColumns()
+				+ " " + x.getSize() + " "
+				+ (x.getSize() * 1.0 / xmtj.numRows() / xmtj.numColumns()));
+
+		System.out.println("+++Converted Matrix+++");
+
+		return x;
+	}
+
+	public static void writeCovarMatrix(SparseMatrixLil psiTPsi,
+			String nonTerminal) {
+		id++;
+		String filePath = "/afs/inf.ed.ac.uk/group/project/vsm/covars/"
+				+ nonTerminal + "/" + "covar_" + id + ".txt";
+		File file = new File(filePath);
+		if (!file.exists()) {
+			file.getParentFile().mkdirs();
+		}
+
+		PrintWriter writer = null;
+
+		try {
+			writer = new PrintWriter(file);
+			for (int i = 0; i < psiTPsi.getSize(); i++) {
+				String s = psiTPsi.getRowIdx(i) + " " + psiTPsi.getColIdx(i)
+						+ " " + psiTPsi.getValue(i);
+				writer.println(s);
+
+			}
+
+		} catch (FileNotFoundException e) {
+			System.out.println("***Exception while writing to the file***" + e);
+		} finally {
+			writer.close();
+		}
+
+	}
+	
+	public static void writeCovarMatrixSem(SparseMatrixLil psiTPsi,
+			String nonTerminal) {
+		id++;
+		String filePath = "/afs/inf.ed.ac.uk/group/project/vsm/covarssem/"
+				+ nonTerminal + "/" + "covar_" + id + ".txt";
+		File file = new File(filePath);
+		if (!file.exists()) {
+			file.getParentFile().mkdirs();
+		}
+
+		PrintWriter writer = null;
+
+		try {
+			writer = new PrintWriter(file);
+			for (int i = 0; i < psiTPsi.getSize(); i++) {
+				String s = psiTPsi.getRowIdx(i) + " " + psiTPsi.getColIdx(i)
+						+ " " + psiTPsi.getValue(i);
+				writer.println(s);
+
+			}
+
+		} catch (FileNotFoundException e) {
+			System.out.println("***Exception while writing to the file***" + e);
+		} finally {
+			writer.close();
+		}
+
+	}
+
+	/**
+	 * Writing singular values to a file
+	 * 
+	 * @param s
+	 * @param nonTerminal
+	 */
+	public static void writeSingularValues(double[] s, String nonTerminal) {
+		String filePath = "/afs/inf.ed.ac.uk/group/project/vsm/covars/"
+				+ nonTerminal + "/sigma.txt";
+
+		File file = new File(filePath);
+		if (!file.exists()) {
+			file.getParentFile().mkdirs();
+		}
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(file);
+			for (int i = 0; i < s.length; i++) {
+
+				/*
+				 * Getting the singular values and writing to a file
+				 */
+				double sigma = s[i];
+				writer.println(Double.toString(sigma));
+
+			}
+
+		} catch (FileNotFoundException e) {
+			System.out
+					.println("***Exception while writing Singular values to the file to the file***"
+							+ e);
+		} finally {
+			writer.close();
+		}
+
+	}
+	
+	
+	/**
+	 * Writing singular values to a file
+	 * 
+	 * @param s
+	 * @param nonTerminal
+	 */
+	public static void writeSingularValuesSem(double[] s, String nonTerminal) {
+		String filePath = "/afs/inf.ed.ac.uk/group/project/vsm/covarssem/"
+				+ nonTerminal + "/sigma.txt";
+
+		File file = new File(filePath);
+		if (!file.exists()) {
+			file.getParentFile().mkdirs();
+		}
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(file);
+			for (int i = 0; i < s.length; i++) {
+
+				/*
+				 * Getting the singular values and writing to a file
+				 */
+				double sigma = s[i];
+				writer.println(Double.toString(sigma));
+
+			}
+
+		} catch (FileNotFoundException e) {
+			System.out
+					.println("***Exception while writing Singular values to the file to the file***"
+							+ e);
+		} finally {
+			writer.close();
+		}
+
+	}
+}

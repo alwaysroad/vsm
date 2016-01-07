@@ -1,0 +1,14 @@
+stripslash.o: stripslash.c ../src/config.h dirname.h \
+  /Library/Developer/CommandLineTools/usr/bin/../lib/clang/6.1.0/include/stdbool.h \
+  /Library/Developer/CommandLineTools/usr/bin/../lib/clang/6.1.0/include/stddef.h \
+  dosname.h
+
+../src/config.h:
+
+dirname.h:
+
+/Library/Developer/CommandLineTools/usr/bin/../lib/clang/6.1.0/include/stdbool.h:
+
+/Library/Developer/CommandLineTools/usr/bin/../lib/clang/6.1.0/include/stddef.h:
+
+dosname.h:
