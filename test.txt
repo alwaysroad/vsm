@@ -1,5 +1,0 @@
-<<<<<<< HEAD
-Fixing some security holes
-=======
-New branch changes
->>>>>>> new-feature
