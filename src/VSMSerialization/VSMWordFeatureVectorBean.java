@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Stack;
 
 import VSMUtilityClasses.Alphabet;
-import cc.mallet.types.SparseVector;
+//import cc.mallet.types.SparseVector;
 import edu.berkeley.nlp.syntax.Tree;
 
 public class VSMWordFeatureVectorBean implements java.io.Serializable {
@@ -105,8 +105,7 @@ public class VSMWordFeatureVectorBean implements java.io.Serializable {
 		return outsideTreeWordList;
 	}
 
-	public void setOutsideTreeFeatureList(
-			ArrayList<String> outsideTreeFeatureList) {
+	public void setOutsideTreeFeatureList(ArrayList<String> outsideTreeFeatureList) {
 		this.outsideTreeWordList = outsideTreeFeatureList;
 	}
 

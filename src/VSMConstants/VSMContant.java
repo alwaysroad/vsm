@@ -136,4 +136,8 @@ public class VSMContant {
 
 	public static final String WORD_EMBEDDINGS = "/group/project/vsm-nfs/WordEmbeddings";
 
+	public static final String SICK_EMBEDDED_SENT_VECS = null;
+
+	public static final String SICK_BINARY_SENT_VECS = null;
+
 }

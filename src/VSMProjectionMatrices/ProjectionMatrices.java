@@ -32,7 +32,7 @@ import com.jmatio.types.MLArray;
 import com.jmatio.types.MLSparse;
 
 import edu.upenn.cis.swell.MathUtils.MatrixFormatConversion;
-import edu.upenn.cis.swell.MathUtils.SVDTemplates1;
+import VSMSentenceEmbeddingFull.SVDTemplates1;
 import edu.upenn.cis.swell.SpectralRepresentations.ContextPCARepresentation;
 
 public class ProjectionMatrices {
@@ -111,8 +111,7 @@ public class ProjectionMatrices {
 
 		userPref = VSMUtil.getUserPreference(args);
 
-		LOGGER = VSMLogger.setup(ProjectionMatrices.class.getName() + "."
-				+ nonTerminal + "." + userPref);
+		LOGGER = VSMLogger.setup(ProjectionMatrices.class.getName() + "." + nonTerminal + "." + userPref);
 
 		hiddenStates = VSMUtil.getHiddenStates(args);
 
@@ -157,15 +156,13 @@ public class ProjectionMatrices {
 
 	private static void createTextFileForYSyn(Matrix[] projectionMatrices) {
 
-		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "YSyn",
-				1);
+		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "YSyn", 1);
 
 	}
 
 	private static void createTextFileForZSyn(Matrix[] projectionMatrices) {
 
-		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "ZSyn",
-				0);
+		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "ZSyn", 0);
 
 	}
 
@@ -187,22 +184,19 @@ public class ProjectionMatrices {
 
 	private static void createTextFileForYSem(Matrix[] projectionMatrices) {
 
-		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "YSem",
-				1);
+		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "YSem", 1);
 
 	}
 
 	private static void createTextFileForZSem(Matrix[] projectionMatrices) {
 
-		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "ZSem",
-				0);
+		VSMUtil.writeProjectionMatrix(projectionMatrices, nonTerminal, "ZSem", 0);
 
 	}
 
 	private static Matrix[] deserializeProjectionsSyn() {
 
-		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/"
-				+ nonTerminal;
+		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/" + nonTerminal;
 
 		File fileDir = new File(fileDirPath);
 
@@ -214,21 +208,15 @@ public class ProjectionMatrices {
 			try {
 
 				@SuppressWarnings("resource")
-				ObjectInput projectionsPath = new ObjectInputStream(
-						new FileInputStream(fileName));
+				ObjectInput projectionsPath = new ObjectInputStream(new FileInputStream(fileName));
 
 				matrices = (Matrix[]) projectionsPath.readObject();
 
-				System.out
-						.println("=======De-serialized the CCA Variant Run=======");
+				System.out.println("=======De-serialized the CCA Variant Run=======");
 			} catch (IOException ioe) {
-				LOGGER.log(Level.SEVERE,
-						"Exception while reading the projections.ser file: "
-								+ ioe);
+				LOGGER.log(Level.SEVERE, "Exception while reading the projections.ser file: " + ioe);
 			} catch (ClassNotFoundException e) {
-				LOGGER.log(Level.SEVERE,
-						"Exception while reading the projection matrices object"
-								+ e);
+				LOGGER.log(Level.SEVERE, "Exception while reading the projection matrices object" + e);
 				e.printStackTrace();
 			}
 
@@ -236,8 +224,7 @@ public class ProjectionMatrices {
 		} else {
 
 			System.out
-					.println("***There is no such non-terminal for which we can get the projections***"
-							+ nonTerminal);
+					.println("***There is no such non-terminal for which we can get the projections***" + nonTerminal);
 			return null;
 		}
 
@@ -245,8 +232,7 @@ public class ProjectionMatrices {
 
 	private static Matrix[] deserializeProjectionsSem() {
 
-		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/"
-				+ nonTerminal;
+		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/" + nonTerminal;
 
 		File fileDir = new File(fileDirPath);
 
@@ -258,21 +244,15 @@ public class ProjectionMatrices {
 			try {
 
 				@SuppressWarnings("resource")
-				ObjectInput projectionsPath = new ObjectInputStream(
-						new FileInputStream(fileName));
+				ObjectInput projectionsPath = new ObjectInputStream(new FileInputStream(fileName));
 
 				matrices = (Matrix[]) projectionsPath.readObject();
 
-				System.out
-						.println("=======De-serialized the CCA Variant Run=======");
+				System.out.println("=======De-serialized the CCA Variant Run=======");
 			} catch (IOException ioe) {
-				LOGGER.log(Level.SEVERE,
-						"Exception while reading the projections.ser file: "
-								+ ioe);
+				LOGGER.log(Level.SEVERE, "Exception while reading the projections.ser file: " + ioe);
 			} catch (ClassNotFoundException e) {
-				LOGGER.log(Level.SEVERE,
-						"Exception while reading the projection matrices object"
-								+ e);
+				LOGGER.log(Level.SEVERE, "Exception while reading the projection matrices object" + e);
 				e.printStackTrace();
 			}
 
@@ -280,8 +260,7 @@ public class ProjectionMatrices {
 		} else {
 
 			System.out
-					.println("***There is no such non-terminal for which we can get the projections***"
-							+ nonTerminal);
+					.println("***There is no such non-terminal for which we can get the projections***" + nonTerminal);
 			return null;
 		}
 
@@ -314,16 +293,11 @@ public class ProjectionMatrices {
 
 		// transformCovarianceMatrices("Sem", obj);
 
-		computeCCASem(
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSem),
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSem),
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSem),
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSem),
-				svdTC, null, 0, hiddenStates, nonTerminal, obj);
+		computeCCASem(MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSem),
+				MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSem),
+				MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSem),
+				MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSem), svdTC, null, 0, hiddenStates,
+				nonTerminal, obj);
 
 		LOGGER.info("+++++Leaving the formSemanticProjections method++++++");
 
@@ -351,8 +325,7 @@ public class ProjectionMatrices {
 
 		LOGGER.info("Storing the unnormalized covariances in a mat file");
 		File file = new File(
-				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/"
-						+ nonTerminal + "/" + nonTerminal + "usem.mat");
+				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/" + nonTerminal + "/" + nonTerminal + "usem.mat");
 
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
@@ -367,35 +340,26 @@ public class ProjectionMatrices {
 
 	}
 
-	private static void computeCCASem(FlexCompRowMatrix xty,
-			FlexCompRowMatrix ytx, FlexCompRowMatrix yty,
-			FlexCompRowMatrix xtx, SVDTemplates1 svdTC,
-			ContextPCARepresentation _cpcaR2, int twoStageFlag,
+	private static void computeCCASem(FlexCompRowMatrix xty, FlexCompRowMatrix ytx, FlexCompRowMatrix yty,
+			FlexCompRowMatrix xtx, SVDTemplates1 svdTC, ContextPCARepresentation _cpcaR2, int twoStageFlag,
 			int hiddenStates, String directoryName, ProjectionMatrices obj) {
 
 		LOGGER.info("+++Entering CCA Compute Function+++");
 		DenseDoubleMatrix2D ZCOLT, YCOLT;
 
-		LOGGER.info("Total memory (bytes) currently used: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) currently used: " + Runtime.getRuntime().totalMemory());
 
-		System.out
-				.println("****Memory Consuming Step Done, Loaded two huge matrices in Memory****");
+		System.out.println("****Memory Consuming Step Done, Loaded two huge matrices in Memory****");
 
-		LOGGER.info("Total memory (bytes) used currently by JVM: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) used currently by JVM: " + Runtime.getRuntime().totalMemory());
 
-		FlexCompRowMatrix auxMat1 = new FlexCompRowMatrix(xtx.numRows(),
-				xty.numColumns());
+		FlexCompRowMatrix auxMat1 = new FlexCompRowMatrix(xtx.numRows(), xty.numColumns());
 
-		FlexCompRowMatrix auxMat2 = new FlexCompRowMatrix(yty.numRows(),
-				ytx.numColumns());
+		FlexCompRowMatrix auxMat2 = new FlexCompRowMatrix(yty.numRows(), ytx.numColumns());
 
-		FlexCompRowMatrix auxMat3 = new FlexCompRowMatrix(auxMat1.numRows(),
-				auxMat1.numColumns());
+		FlexCompRowMatrix auxMat3 = new FlexCompRowMatrix(auxMat1.numRows(), auxMat1.numColumns());
 
-		FlexCompRowMatrix auxMat4 = new FlexCompRowMatrix(auxMat2.numRows(),
-				auxMat2.numColumns());
+		FlexCompRowMatrix auxMat4 = new FlexCompRowMatrix(auxMat2.numRows(), auxMat2.numColumns());
 
 		int dim1 = ytx.numRows();
 
@@ -403,28 +367,22 @@ public class ProjectionMatrices {
 
 		LOGGER.info("+++Initialized auxiliary matrices+++");
 
-		auxMat1 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(
-				computeSparseInverseSqRoot(xtx), xty);
+		auxMat1 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(computeSparseInverseSqRoot(xtx), xty);
 
-		auxMat3 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat1,
-				computeSparseInverseSqRoot(yty));
+		auxMat3 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat1, computeSparseInverseSqRoot(yty));
 
 		LOGGER.info("+++Computed 1 inverse+++");
 
-		auxMat2 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(
-				(svdTC.computeSparseInverseSqRoot(yty)), ytx);
+		auxMat2 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN((svdTC.computeSparseInverseSqRoot(yty)), ytx);
 
-		auxMat4 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat2,
-				svdTC.computeSparseInverseSqRoot(xtx));
+		auxMat4 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat2, svdTC.computeSparseInverseSqRoot(xtx));
 
 		LOGGER.info("+++Computed Inverses+++");
 
 		LOGGER.info("+++Entering SVD computation+++");
 
-		obj.ZSemUnormalized = svdTC.computeSVD_Tropp(
-				MatrixFormatConversion.createSparseMatrixCOLT(auxMat3),
-				getOmegaMatrix(auxMat3.numColumns(), hiddenStates), dim1,
-				hiddenStates, false);
+		obj.ZSemUnormalized = svdTC.computeSVD_Tropp(MatrixFormatConversion.createSparseMatrixCOLT(auxMat3),
+				getOmegaMatrix(auxMat3.numColumns(), hiddenStates), dim1, hiddenStates, false);
 
 		obj.s = svdTC.getSingularVals();
 
@@ -432,24 +390,17 @@ public class ProjectionMatrices {
 
 		ZCOLT = new DenseDoubleMatrix2D(xtx.numRows(), dimensions);
 
-		MatrixFormatConversion
-				.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(xtx)))
-				.zMult(MatrixFormatConversion
-						.createDenseMatrixCOLT(obj.ZSemUnormalized),
-						ZCOLT);
+		MatrixFormatConversion.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(xtx)))
+				.zMult(MatrixFormatConversion.createDenseMatrixCOLT(obj.ZSemUnormalized), ZCOLT);
 
-		LOGGER.info("Total memory (bytes) currently used: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) currently used: " + Runtime.getRuntime().totalMemory());
 
 		obj.ZSem = MatrixFormatConversion.createDenseMatrixJAMA(ZCOLT);
 
-		LOGGER.info("++++SIZE OF ZSEM+++++ " + obj.ZSem.getRowDimension() + " "
-				+ obj.ZSem.getColumnDimension());
+		LOGGER.info("++++SIZE OF ZSEM+++++ " + obj.ZSem.getRowDimension() + " " + obj.ZSem.getColumnDimension());
 
-		obj.YSemUnormalized = svdTC.computeSVD_Tropp(
-				MatrixFormatConversion.createSparseMatrixCOLT(auxMat4),
-				getOmegaMatrix(auxMat4.numColumns(), hiddenStates), dim2,
-				hiddenStates, false);
+		obj.YSemUnormalized = svdTC.computeSVD_Tropp(MatrixFormatConversion.createSparseMatrixCOLT(auxMat4),
+				getOmegaMatrix(auxMat4.numColumns(), hiddenStates), dim2, hiddenStates, false);
 
 		obj.s = svdTC.getSingularVals();
 
@@ -457,22 +408,16 @@ public class ProjectionMatrices {
 
 		YCOLT = new DenseDoubleMatrix2D(yty.numRows(), dimensions);
 
-		MatrixFormatConversion
-				.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(yty)))
-				.zMult(MatrixFormatConversion
-						.createDenseMatrixCOLT(obj.YSemUnormalized),
-						YCOLT);
+		MatrixFormatConversion.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(yty)))
+				.zMult(MatrixFormatConversion.createDenseMatrixCOLT(obj.YSemUnormalized), YCOLT);
 
-		LOGGER.info("Total memory (bytes) currently used: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) currently used: " + Runtime.getRuntime().totalMemory());
 
 		obj.YSem = MatrixFormatConversion.createDenseMatrixJAMA(YCOLT);
 
-		LOGGER.info("++++++SIZE OF YSEM++++" + obj.YSem.getRowDimension() + " "
-				+ obj.YSem.getColumnDimension());
+		LOGGER.info("++++++SIZE OF YSEM++++" + obj.YSem.getRowDimension() + " " + obj.YSem.getColumnDimension());
 
-		LOGGER.info("Total memory (bytes) currently used: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) currently used: " + Runtime.getRuntime().totalMemory());
 
 	}
 
@@ -491,16 +436,11 @@ public class ProjectionMatrices {
 		// transformCovarianceMatrices("Syn", obj);
 
 		LOGGER.info("NOW CCA To get the projections");
-		computeCCA(
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSyn),
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSYn),
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSyn),
-				MatrixFormatConversion
-						.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSyn),
-				svdTC, null, 0, hiddenStates, nonTerminal, obj);
+		computeCCA(MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSyn),
+				MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSYn),
+				MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSyn),
+				MatrixFormatConversion.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSyn), svdTC, null, 0, hiddenStates,
+				nonTerminal, obj);
 
 	}
 
@@ -511,29 +451,22 @@ public class ProjectionMatrices {
 
 	}
 
-	private static void computeCCA(FlexCompRowMatrix xty,
-			FlexCompRowMatrix ytx, FlexCompRowMatrix yty,
-			FlexCompRowMatrix xtx, SVDTemplates1 svdTC,
-			ContextPCARepresentation _cpcaR2, int twoStageFlag,
+	private static void computeCCA(FlexCompRowMatrix xty, FlexCompRowMatrix ytx, FlexCompRowMatrix yty,
+			FlexCompRowMatrix xtx, SVDTemplates1 svdTC, ContextPCARepresentation _cpcaR2, int twoStageFlag,
 			int hiddenStates, String directoryName, ProjectionMatrices obj) {
 
 		LOGGER.info("+++Entering CCA Compute Function+++");
 		DenseDoubleMatrix2D ZCOLT, YCOLT;
 
-		LOGGER.info("Total memory (bytes) used currently by JVM: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) used currently by JVM: " + Runtime.getRuntime().totalMemory());
 
-		FlexCompRowMatrix auxMat1 = new FlexCompRowMatrix(xtx.numRows(),
-				xty.numColumns());
+		FlexCompRowMatrix auxMat1 = new FlexCompRowMatrix(xtx.numRows(), xty.numColumns());
 
-		FlexCompRowMatrix auxMat2 = new FlexCompRowMatrix(yty.numRows(),
-				ytx.numColumns());
+		FlexCompRowMatrix auxMat2 = new FlexCompRowMatrix(yty.numRows(), ytx.numColumns());
 
-		FlexCompRowMatrix auxMat3 = new FlexCompRowMatrix(auxMat1.numRows(),
-				auxMat1.numColumns());
+		FlexCompRowMatrix auxMat3 = new FlexCompRowMatrix(auxMat1.numRows(), auxMat1.numColumns());
 
-		FlexCompRowMatrix auxMat4 = new FlexCompRowMatrix(auxMat2.numRows(),
-				auxMat2.numColumns());
+		FlexCompRowMatrix auxMat4 = new FlexCompRowMatrix(auxMat2.numRows(), auxMat2.numColumns());
 
 		int dim1 = ytx.numRows();
 
@@ -541,74 +474,55 @@ public class ProjectionMatrices {
 
 		LOGGER.info("+++Initialized auxiliary matrices+++");
 
-		auxMat1 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(
-				computeSparseInverseSqRoot(xtx), xty);
+		auxMat1 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(computeSparseInverseSqRoot(xtx), xty);
 
-		auxMat3 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat1,
-				computeSparseInverseSqRoot(yty));
+		auxMat3 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat1, computeSparseInverseSqRoot(yty));
 
 		LOGGER.info("+++Computed 1 inverse+++");
 
-		auxMat2 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(
-				(svdTC.computeSparseInverseSqRoot(yty)), ytx);
+		auxMat2 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN((svdTC.computeSparseInverseSqRoot(yty)), ytx);
 
-		auxMat4 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat2,
-				svdTC.computeSparseInverseSqRoot(xtx));
+		auxMat4 = MatrixFormatConversion.multLargeSparseMatricesJEIGEN(auxMat2, svdTC.computeSparseInverseSqRoot(xtx));
 
 		LOGGER.info("+++Computed Inverses+++");
 
 		LOGGER.info("+++Entering SVD computation+++");
 
-		obj.ZSynUnormalized = svdTC.computeSVD_Tropp(
-				MatrixFormatConversion.createSparseMatrixCOLT(auxMat3),
-				getOmegaMatrix(auxMat3.numColumns(), hiddenStates), dim1,
-				hiddenStates, false);
+		obj.ZSynUnormalized = svdTC.computeSVD_Tropp(MatrixFormatConversion.createSparseMatrixCOLT(auxMat3),
+				getOmegaMatrix(auxMat3.numColumns(), hiddenStates), dim1, hiddenStates, false);
 
 		obj.s = svdTC.getSingularVals();
 
 		VSMUtil.writeSingularValues(obj.s, nonTerminal, "ZSyn", dimensions);
 
 		ZCOLT = new DenseDoubleMatrix2D(xtx.numRows(), dimensions);
-		MatrixFormatConversion
-				.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(xtx)))
-				.zMult(MatrixFormatConversion
-						.createDenseMatrixCOLT(obj.ZSynUnormalized),
-						ZCOLT);
+		MatrixFormatConversion.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(xtx)))
+				.zMult(MatrixFormatConversion.createDenseMatrixCOLT(obj.ZSynUnormalized), ZCOLT);
 
-		LOGGER.info("Total memory (bytes) currently used: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) currently used: " + Runtime.getRuntime().totalMemory());
 
 		obj.ZSyn = MatrixFormatConversion.createDenseMatrixJAMA(ZCOLT);
 
-		LOGGER.info("+++++++SIZE OF ZSYN+++++++++" + obj.ZSyn.getRowDimension()
-				+ " " + obj.ZSyn.getColumnDimension());
+		LOGGER.info("+++++++SIZE OF ZSYN+++++++++" + obj.ZSyn.getRowDimension() + " " + obj.ZSyn.getColumnDimension());
 
-		obj.YSynUnormalized = svdTC.computeSVD_Tropp(
-				MatrixFormatConversion.createSparseMatrixCOLT(auxMat4),
-				getOmegaMatrix(auxMat4.numColumns(), hiddenStates), dim2,
-				hiddenStates, false);
+		obj.YSynUnormalized = svdTC.computeSVD_Tropp(MatrixFormatConversion.createSparseMatrixCOLT(auxMat4),
+				getOmegaMatrix(auxMat4.numColumns(), hiddenStates), dim2, hiddenStates, false);
 
 		YCOLT = new DenseDoubleMatrix2D(yty.numRows(), dimensions);
-		MatrixFormatConversion
-				.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(yty)))
-				.zMult(MatrixFormatConversion
-						.createDenseMatrixCOLT(obj.YSynUnormalized),
-						YCOLT);
+		MatrixFormatConversion.createSparseMatrixCOLT((svdTC.computeSparseInverseSqRoot(yty)))
+				.zMult(MatrixFormatConversion.createDenseMatrixCOLT(obj.YSynUnormalized), YCOLT);
 
 		obj.s = svdTC.getSingularVals();
 		VSMUtil.writeSingularValues(obj.s, nonTerminal, "YSyn", dimensions);
 
-		LOGGER.info("Total memory (bytes) currently used: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) currently used: " + Runtime.getRuntime().totalMemory());
 
 		obj.YSyn = MatrixFormatConversion.createDenseMatrixJAMA(YCOLT);
 
-		LOGGER.info("+++++++++SIZE OF YSYN+++++++++"
-				+ obj.YSyn.getRowDimension() + " "
-				+ obj.YSyn.getColumnDimension());
+		LOGGER.info(
+				"+++++++++SIZE OF YSYN+++++++++" + obj.YSyn.getRowDimension() + " " + obj.YSyn.getColumnDimension());
 
-		LOGGER.info("Total memory (bytes) currently used: "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("Total memory (bytes) currently used: " + Runtime.getRuntime().totalMemory());
 
 	}
 
@@ -622,16 +536,14 @@ public class ProjectionMatrices {
 
 	}
 
-	public static void serializeCCAVariantsRunSyn(String directoryName,
-			ProjectionMatrices obj) {
+	public static void serializeCCAVariantsRunSyn(String directoryName, ProjectionMatrices obj) {
 
 		Matrix[] projections = new Matrix[2];
 
 		projections[0] = VSMUtil.normalize(obj.ZSyn);
 		projections[1] = VSMUtil.normalize(obj.YSyn);
 
-		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/"
-				+ directoryName;
+		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/" + directoryName;
 
 		File fileDir = new File(fileDirPath);
 		if (!fileDir.exists()) {
@@ -641,14 +553,12 @@ public class ProjectionMatrices {
 
 		try {
 			@SuppressWarnings("resource")
-			ObjectOutput output = new ObjectOutputStream(new FileOutputStream(
-					fileName, false));
+			ObjectOutput output = new ObjectOutputStream(new FileOutputStream(fileName, false));
 			output.writeObject(projections);
 
 			LOGGER.info("=======Serialized the CCA Variant Run=======");
 		} catch (IOException ioe) {
-			LOGGER.log(Level.SEVERE,
-					"Exception While Serializing the Projections");
+			LOGGER.log(Level.SEVERE, "Exception While Serializing the Projections");
 			LOGGER.info(ioe.getMessage());
 		}
 
@@ -656,8 +566,7 @@ public class ProjectionMatrices {
 
 	}
 
-	public static void serializeCCAVariantsRunSem(String directoryName,
-			ProjectionMatrices obj) {
+	public static void serializeCCAVariantsRunSem(String directoryName, ProjectionMatrices obj) {
 
 		Matrix[] projections = new Matrix[2];
 
@@ -665,8 +574,7 @@ public class ProjectionMatrices {
 		projections[0] = VSMUtil.normalize(obj.ZSem);
 		projections[1] = VSMUtil.normalize(obj.YSem);
 
-		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/"
-				+ directoryName;
+		String fileDirPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/projectionMatrices/" + directoryName;
 
 		File fileDir = new File(fileDirPath);
 		if (!fileDir.exists()) {
@@ -676,14 +584,12 @@ public class ProjectionMatrices {
 
 		try {
 			@SuppressWarnings("resource")
-			ObjectOutput output = new ObjectOutputStream(new FileOutputStream(
-					fileName, false));
+			ObjectOutput output = new ObjectOutputStream(new FileOutputStream(fileName, false));
 			output.writeObject(projections);
 
 			LOGGER.info("=======Serialized the CCA Variant Run=======");
 		} catch (IOException ioe) {
-			LOGGER.log(Level.SEVERE,
-					"Exception While Serializing the Projections");
+			LOGGER.log(Level.SEVERE, "Exception While Serializing the Projections");
 			LOGGER.info(ioe.getMessage());
 		}
 
@@ -707,11 +613,9 @@ public class ProjectionMatrices {
 		return Omega;
 	}
 
-	public static FlexCompRowMatrix computeSparseInverseSqRoot(
-			FlexCompRowMatrix X) {
+	public static FlexCompRowMatrix computeSparseInverseSqRoot(FlexCompRowMatrix X) {
 
-		FlexCompRowMatrix diagInvEntries = new FlexCompRowMatrix(X.numRows(),
-				X.numColumns());
+		FlexCompRowMatrix diagInvEntries = new FlexCompRowMatrix(X.numRows(), X.numColumns());
 
 		LOGGER.info("++Beginning Sparse Inverse Sq. Root++");
 
@@ -734,34 +638,33 @@ public class ProjectionMatrices {
 
 	}
 
-	private static void transformCovarianceMatrices(String check,
-			ProjectionMatrices obj) {
+	private static void transformCovarianceMatrices(String check, ProjectionMatrices obj) {
 
 		LOGGER.info("Normalizing the Covariance Matrices, the square root transform");
 
 		if (check.equalsIgnoreCase("Syn")) {
 
-			obj.PsiTPsiSyn = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSyn)));
-			obj.PsiTPhiSyn = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSyn)));
-			obj.PhiTPhiSyn = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSyn)));
-			obj.PhiTPsiSYn = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSYn)));
+			obj.PsiTPsiSyn = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSyn)));
+			obj.PsiTPhiSyn = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSyn)));
+			obj.PhiTPhiSyn = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSyn)));
+			obj.PhiTPsiSYn = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSYn)));
 
 			createMatFileCovriancesNSyn(obj);
 
 		} else if (check.equalsIgnoreCase("Sem")) {
 
-			obj.PsiTPsiSem = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSem)));
-			obj.PsiTPhiSem = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSem)));
-			obj.PhiTPhiSem = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSem)));
-			obj.PhiTPsiSem = VSMUtil.createJeigenMatrix(transform(VSMUtil
-					.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSem)));
+			obj.PsiTPsiSem = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PsiTPsiSem)));
+			obj.PsiTPhiSem = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PsiTPhiSem)));
+			obj.PhiTPhiSem = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PhiTPhiSem)));
+			obj.PhiTPsiSem = VSMUtil
+					.createJeigenMatrix(transform(VSMUtil.createSparseMatrixMTJFromJeigen(obj.PhiTPsiSem)));
 
 			createMatFileCovriancesNSem(obj);
 
@@ -774,8 +677,7 @@ public class ProjectionMatrices {
 	private static void createMatFileCovriancesNSem(ProjectionMatrices obj) {
 
 		File file = new File(
-				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/"
-						+ nonTerminal + "/" + nonTerminal + "nsem.mat");
+				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/" + nonTerminal + "/" + nonTerminal + "nsem.mat");
 
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
@@ -791,12 +693,10 @@ public class ProjectionMatrices {
 	private static void createMatFileSem() {
 
 		try {
-			new MatFileWriter(
-					"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/"
-							+ nonTerminal + "/" + nonTerminal + "sem.mat", list);
+			new MatFileWriter("/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/" + nonTerminal + "/" + nonTerminal
+					+ "sem.mat", list);
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Exception while writing to the Mat File"
-					+ e);
+			LOGGER.log(Level.SEVERE, "Exception while writing to the Mat File" + e);
 			e.printStackTrace();
 		}
 
@@ -807,8 +707,7 @@ public class ProjectionMatrices {
 	private static void createMatFileCovriancesNSyn(ProjectionMatrices obj) {
 
 		File file = new File(
-				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/"
-						+ nonTerminal + "/" + nonTerminal + "nsyn.mat");
+				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/" + nonTerminal + "/" + nonTerminal + "nsyn.mat");
 
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
@@ -855,8 +754,7 @@ public class ProjectionMatrices {
 		LOGGER.info("Now Forming a MAT file containing the Unnormalized Covariances");
 
 		File file = new File(
-				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/"
-						+ nonTerminal + "/" + nonTerminal + "usyn.mat");
+				"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/" + nonTerminal + "/" + nonTerminal + "usyn.mat");
 
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
@@ -873,12 +771,10 @@ public class ProjectionMatrices {
 
 	private static void createMatFileSyn() {
 		try {
-			new MatFileWriter(
-					"/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/"
-							+ nonTerminal + "/" + nonTerminal + "syn.mat", list);
+			new MatFileWriter("/afs/inf.ed.ac.uk/group/project/vsm-afs/covariances/" + nonTerminal + "/" + nonTerminal
+					+ "syn.mat", list);
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Exception while writing to the Mat File"
-					+ e);
+			LOGGER.log(Level.SEVERE, "Exception while writing to the Mat File" + e);
 			e.printStackTrace();
 		}
 
@@ -886,16 +782,13 @@ public class ProjectionMatrices {
 
 	}
 
-	private static void addSparseMatrix(SparseMatrixLil sparseMatrixLil,
-			String name) {
+	private static void addSparseMatrix(SparseMatrixLil sparseMatrixLil, String name) {
 
-		FlexCompRowMatrix sparseMatrix = VSMUtil
-				.createSparseMatrixMTJFromJeigen(sparseMatrixLil);
+		FlexCompRowMatrix sparseMatrix = VSMUtil.createSparseMatrixMTJFromJeigen(sparseMatrixLil);
 		int[] dims = new int[2];
 		dims[0] = sparseMatrix.numRows();
 		dims[1] = sparseMatrix.numColumns();
-		MLSparse sparse = new MLSparse(name, dims, 0,
-				sparseMatrixLil.getColIdxs().length * 2);
+		MLSparse sparse = new MLSparse(name, dims, 0, sparseMatrixLil.getColIdxs().length * 2);
 		for (MatrixEntry e : sparseMatrix) {
 			sparse.setReal(e.get(), e.row(), e.column());
 		}
@@ -909,13 +802,11 @@ public class ProjectionMatrices {
 		d = obj.PhiSyn.cols;
 		dprime = obj.PsiSyn.cols;
 
-		LOGGER.info("Got the Syntactic Projection Matrix Dimensions: " + d
-				+ " and " + dprime);
+		LOGGER.info("Got the Syntactic Projection Matrix Dimensions: " + d + " and " + dprime);
 
 	}
 
-	private static void formSparseMatrices(SparseMatrixLil[] sparseMatrices,
-			ProjectionMatrices obj, String userPref) {
+	private static void formSparseMatrices(SparseMatrixLil[] sparseMatrices, ProjectionMatrices obj, String userPref) {
 
 		if (userPref.equalsIgnoreCase("Syn")) {
 
@@ -954,13 +845,11 @@ public class ProjectionMatrices {
 		ObjectInput matrices = null;
 
 		try {
-			matrices = new ObjectInputStream(new FileInputStream(new File(
-					VSMContant.SPARSE_MATRICES + nonTerminal + "/"
-							+ nonTerminal + ".ser")));
+			matrices = new ObjectInputStream(new FileInputStream(
+					new File(VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal + ".ser")));
 
 		} catch (IOException e) {
-			LOGGER.severe("Excpeiton While opening a stream to the sparse matrices object file: "
-					+ e);
+			LOGGER.severe("Excpeiton While opening a stream to the sparse matrices object file: " + e);
 		}
 
 		try {
@@ -969,17 +858,13 @@ public class ProjectionMatrices {
 			sparseMatrices = (SparseMatrixLil[]) matrices.readObject();
 
 		} catch (ClassNotFoundException e) {
-			LOGGER.log(Level.SEVERE,
-					"Exception While reading the Sparse Matrices Array Object from the location: "
-							+ VSMContant.SPARSE_MATRICES + nonTerminal + "/"
-							+ nonTerminal + ".ser\n" + "Exception: " + e);
+			LOGGER.log(Level.SEVERE, "Exception While reading the Sparse Matrices Array Object from the location: "
+					+ VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal + ".ser\n" + "Exception: " + e);
 			e.printStackTrace();
 
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE,
-					"Exception While reading the Sparse Matrices Array Object from the location: "
-							+ VSMContant.SPARSE_MATRICES + nonTerminal + "/"
-							+ nonTerminal + ".ser\n" + "Exception: " + e);
+			LOGGER.log(Level.SEVERE, "Exception While reading the Sparse Matrices Array Object from the location: "
+					+ VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal + ".ser\n" + "Exception: " + e);
 			e.printStackTrace();
 		}
 

@@ -36,21 +36,27 @@ public class FeatureDictionaryMain {
 
 		nonTerminal = VSMUtil.getNonTerminal(args);
 
-		existingDictionaryPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/featuredictionary/"
-				+ nonTerminal + "/dictionary.ser";
+		existingDictionaryPath = "/afs/inf.ed.ac.uk/group/project/vsm-afs/featuredictionary/" + nonTerminal
+				+ "/dictionary.ser";
 
 		if (new File(existingDictionaryPath).exists())
-			existingDictionaryBean = ReadSerializedDictionary
-					.readSerializedDictionary(existingDictionaryPath, LOGGER);
+			existingDictionaryBean = ReadSerializedDictionary.readSerializedDictionary(existingDictionaryPath, LOGGER);
 
-		parsedCorpus = VSMUtil.getTreeCorpus();
+		/*
+		 * TODO baked up some code, just to remove errors. Check later
+		 */
+		File[] files = VSMUtil.getTreeCorpus();
+		ArrayList<String> parseCorpusList = new ArrayList<String>();
+		for (File file : files) {
+			parseCorpusList.add(file.getAbsolutePath());
+		}
+		parsedCorpus = parseCorpusList;
 
 		if (parsedCorpus == null) {
 			LOGGER.severe("Something wrong with the file system, could not get the tree corpus");
 		}
 
-		LOGGER.info("Extracting the Feature Dictionary for the Non Terminal "
-				+ nonTerminal);
+		LOGGER.info("Extracting the Feature Dictionary for the Non Terminal " + nonTerminal);
 
 		extractDictionaries();
 
@@ -66,16 +72,13 @@ public class FeatureDictionaryMain {
 
 		dictionaryBean.setOutsideFeatureDictionary(outsideFeatureDictionary);
 
-		dictionaryBean.setInsideDictionarySize(VSMUtil
-				.getDictionarySize(insideFeatureDictionary));
+		dictionaryBean.setInsideDictionarySize(VSMUtil.getDictionarySize(insideFeatureDictionary));
 
-		dictionaryBean.setOutsideDictionarySize(VSMUtil
-				.getDictionarySize(outsideFeatureDictionary));
+		dictionaryBean.setOutsideDictionarySize(VSMUtil.getDictionarySize(outsideFeatureDictionary));
 
 		SerializeFeatureDictionary featureDictionary = new SerializeFeatureDictionary();
 
-		featureDictionary.serializeFeatureDictionary(dictionaryBean,
-				nonTerminal.toLowerCase());
+		featureDictionary.serializeFeatureDictionary(dictionaryBean, nonTerminal.toLowerCase());
 
 		// VSMUtil.writeFeatureDictionary(dictionaryBean,
 		// nonTerminal.toLowerCase());
@@ -84,24 +87,19 @@ public class FeatureDictionaryMain {
 
 	private static void extractDictionaries() {
 
-		ExtractDictionary extractInsideDict = new ExtractInsideFeatureDictionary(
-				nonTerminal, LOGGER);
+		ExtractDictionary extractInsideDict = new ExtractInsideFeatureDictionary(nonTerminal, LOGGER);
 
-		ExtractDictionary extractOutsideDict = new ExtractOutsideFeatureDictionary(
-				nonTerminal, LOGGER);
+		ExtractDictionary extractOutsideDict = new ExtractOutsideFeatureDictionary(nonTerminal, LOGGER);
 
 		try {
 
-			insideFeatureDictionary = extractInsideDict
-					.getUpdatedFeatureDictionary(parsedCorpus,
-							existingDictionaryBean);
-			outsideFeatureDictionary = extractOutsideDict
-					.getUpdatedFeatureDictionary(parsedCorpus,
-							existingDictionaryBean);
+			insideFeatureDictionary = extractInsideDict.getUpdatedFeatureDictionary(parsedCorpus,
+					existingDictionaryBean);
+			outsideFeatureDictionary = extractOutsideDict.getUpdatedFeatureDictionary(parsedCorpus,
+					existingDictionaryBean);
 
 		} catch (Exception e) {
-			LOGGER.severe("Exception while extracting the inside and outside feature dictionaries"
-					+ e);
+			LOGGER.severe("Exception while extracting the inside and outside feature dictionaries" + e);
 		}
 
 	}

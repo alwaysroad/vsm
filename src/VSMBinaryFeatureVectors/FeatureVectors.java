@@ -122,23 +122,19 @@ public class FeatureVectors {
 
 		nonTerminal = VSMUtil.getNonTerminal(args);
 
-		LOGGER = VSMLogger.setup(FeatureVectors.class.getName() + "."
-				+ nonTerminal);
+		LOGGER = VSMLogger.setup(FeatureVectors.class.getName() + "." + nonTerminal);
 
-		featureDictionary = VSMContant.FEATURE_DICTIONARY
-				+ nonTerminal.toLowerCase() + "/dictionary.ser";
+		featureDictionary = VSMContant.FEATURE_DICTIONARY + nonTerminal.toLowerCase() + "/dictionary.ser";
 
 		wordDictionaryPath = VSMContant.WORD_DICT;
 
-		parsedCorpus = VSMUtil.getTreeCorpus();
-
+		// parsedCorpus = VSMUtil.getTreeCorpus();
+		parsedCorpus = null; // TODO some problem here
 		LOGGER.info("Reading the Feature Dictionary Object");
-		dictionaryBean = ReadSerializedDictionary.readSerializedDictionary(
-				featureDictionary, LOGGER);
+		dictionaryBean = ReadSerializedDictionary.readSerializedDictionary(featureDictionary, LOGGER);
 
 		LOGGER.info("Reading the word dictionary object");
-		wordDictBean = VSMReadSerialWordDict
-				.readSerializedDictionary(wordDictionaryPath);
+		wordDictBean = VSMReadSerialWordDict.readSerializedDictionary(wordDictionaryPath);
 
 		outsideFeatureDictionary = dictionaryBean.getOutsideFeatureDictionary();
 
@@ -153,8 +149,7 @@ public class FeatureVectors {
 
 		d = getD();
 
-		LOGGER.info("+++Total Memory Currenly Used By JVM++++ "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("+++Total Memory Currenly Used By JVM++++ " + Runtime.getRuntime().totalMemory());
 
 		PsiSyn = new SparseMatrixLil(300000, dprime);
 
@@ -164,8 +159,7 @@ public class FeatureVectors {
 
 		PhiSem = new SparseMatrixLil(300000, wordDictionary.size());
 
-		LOGGER.info("+++Total memory After initializing the Matrices+++ "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("+++Total memory After initializing the Matrices+++ " + Runtime.getRuntime().totalMemory());
 
 		serializeBean = new SerializeFeatureVectorBean();
 
@@ -191,9 +185,7 @@ public class FeatureVectors {
 
 						insideTree = treeIterator.next();
 
-						if (!insideTree.isLeaf()
-								&& insideTree.getLabel().equalsIgnoreCase(
-										nonTerminal)) {
+						if (!insideTree.isLeaf() && insideTree.getLabel().equalsIgnoreCase(nonTerminal)) {
 
 							System.out.println("Iteration: " + count);
 
@@ -221,13 +213,11 @@ public class FeatureVectors {
 		}
 		endTime = System.nanoTime();
 		duration = (endTime - startTime);
-		LOGGER.info("Time taken By the main loop: " + duration / 1000000
-				+ " millisec");
+		LOGGER.info("Time taken By the main loop: " + duration / 1000000 + " millisec");
 		/*
 		 * Checking Memory Usage after the objects have been filled with data
 		 */
-		LOGGER.info("++++Total Memory in use++++ "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("++++Total Memory in use++++ " + Runtime.getRuntime().totalMemory());
 
 		/*
 		 * Timing the method
@@ -238,8 +228,7 @@ public class FeatureVectors {
 
 		endTime = System.nanoTime();
 		duration = (endTime - startTime);
-		LOGGER.info("Time taken for serializing the Binary Feature Matrices: "
-				+ duration / 1000000 + " millisec");
+		LOGGER.info("Time taken for serializing the Binary Feature Matrices: " + duration / 1000000 + " millisec");
 
 		/*
 		 * Timing the method
@@ -250,8 +239,7 @@ public class FeatureVectors {
 
 		endTime = System.nanoTime();
 		duration = (endTime - startTime);
-		LOGGER.info("Time taken for Creating the MAT File: " + duration
-				/ 1000000 + " millisec");
+		LOGGER.info("Time taken for Creating the MAT File: " + duration / 1000000 + " millisec");
 	}
 
 	private static void createMatricesMatFile() {
@@ -260,9 +248,8 @@ public class FeatureVectors {
 		SparseMatrixLil[] sparseMatrices = new SparseMatrixLil[4];
 		ObjectInput matrices = null;
 		try {
-			matrices = new ObjectInputStream(new FileInputStream(new File(
-					VSMContant.SPARSE_MATRICES + nonTerminal + "/"
-							+ nonTerminal + ".ser")));
+			matrices = new ObjectInputStream(new FileInputStream(
+					new File(VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal + ".ser")));
 
 		} catch (IOException e) {
 			LOGGER.severe("Error while reading the matrices object from the file");
@@ -286,8 +273,7 @@ public class FeatureVectors {
 
 	private static void createMatFile(SparseMatrixLil[] sparseMatrices) {
 
-		File file = new File(VSMContant.SPARSE_MATRICES + nonTerminal + "/"
-				+ nonTerminal + "sparse.mat");
+		File file = new File(VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal + "sparse.mat");
 
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
@@ -299,28 +285,23 @@ public class FeatureVectors {
 		addSparseMatrix(sparseMatrices[3], "PhiSem");
 
 		try {
-			new MatFileWriter(VSMContant.SPARSE_MATRICES + nonTerminal + "/"
-					+ nonTerminal + "sparse.mat", list);
-			LOGGER.info("Written Mat File at" + VSMContant.SPARSE_MATRICES
-					+ nonTerminal + "/" + nonTerminal + "sparse.mat");
+			new MatFileWriter(VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal + "sparse.mat", list);
+			LOGGER.info("Written Mat File at" + VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal
+					+ "sparse.mat");
 		} catch (IOException e) {
-			LOGGER.log(Level.SEVERE, "Exception while writing to the Mat File"
-					+ e);
+			LOGGER.log(Level.SEVERE, "Exception while writing to the Mat File" + e);
 			e.printStackTrace();
 		}
 
 	}
 
-	private static void addSparseMatrix(SparseMatrixLil sparseMatrixLil,
-			String name) {
+	private static void addSparseMatrix(SparseMatrixLil sparseMatrixLil, String name) {
 
-		FlexCompRowMatrix sparseMatrix = VSMUtil
-				.createSparseMatrixMTJFromJeigen(sparseMatrixLil);
+		FlexCompRowMatrix sparseMatrix = VSMUtil.createSparseMatrixMTJFromJeigen(sparseMatrixLil);
 		int[] dims = new int[2];
 		dims[0] = sparseMatrix.numRows();
 		dims[1] = sparseMatrix.numColumns();
-		MLSparse sparse = new MLSparse(name, dims, 0,
-				sparseMatrixLil.getColIdxs().length * 2);
+		MLSparse sparse = new MLSparse(name, dims, 0, sparseMatrixLil.getColIdxs().length * 2);
 		for (MatrixEntry e : sparseMatrix) {
 			sparse.setReal(e.get(), e.row(), e.column());
 		}
@@ -334,8 +315,7 @@ public class FeatureVectors {
 		LOGGER.info("Serializing the 4 Sparse Matrices");
 		FeatureVectors obj = new FeatureVectors();
 
-		File file = new File(VSMContant.SPARSE_MATRICES + nonTerminal + "/"
-				+ nonTerminal + ".ser");
+		File file = new File(VSMContant.SPARSE_MATRICES + nonTerminal + "/" + nonTerminal + ".ser");
 
 		if (!file.exists()) {
 			file.getParentFile().mkdirs();
@@ -348,8 +328,7 @@ public class FeatureVectors {
 		obj.sparseBinaryMatrices[2] = PsiSem;
 		obj.sparseBinaryMatrices[3] = PhiSem;
 
-		LOGGER.info("++++Total Memory in Use After creating JAMA Matrices+++ "
-				+ Runtime.getRuntime().totalMemory());
+		LOGGER.info("++++Total Memory in Use After creating JAMA Matrices+++ " + Runtime.getRuntime().totalMemory());
 
 		ObjectOutput matrices = null;
 		try {
@@ -435,13 +414,13 @@ public class FeatureVectors {
 
 		wordFeatureVecBean = new VSMWordFeatureVectorBean();
 
-		psiSem = new VSMOutsideFeatureVectorWords().getOutsideFeatureVectorPsi(
-				syntaxTree, insideTree, wordDictionary, wordFeatureVecBean);
+		psiSem = new VSMOutsideFeatureVectorWords().getOutsideFeatureVectorPsi(syntaxTree, insideTree, wordDictionary,
+				wordFeatureVecBean);
 
 		// System.out.println(psiSem);
 
-		phiSem = new VSMInsideFeatureVectorWords().getInsideFeatureVectorPhi(
-				insideTree, wordDictionary, wordFeatureVecBean);
+		phiSem = new VSMInsideFeatureVectorWords().getInsideFeatureVectorPhi(insideTree, wordDictionary,
+				wordFeatureVecBean);
 
 		// System.out.println(phiSem);
 
@@ -456,27 +435,23 @@ public class FeatureVectors {
 
 		VSMUtil.setConstituentLength(constituentsMap.get(insideTree));
 
-		VSMUtil.getNumberOfOutsideWordsLeft(insideTree, constituentsMap,
-				syntaxTree);
+		VSMUtil.getNumberOfOutsideWordsLeft(insideTree, constituentsMap, syntaxTree);
 
-		VSMUtil.getNumberOfOutsideWordsRight(insideTree, constituentsMap,
-				syntaxTree);
+		VSMUtil.getNumberOfOutsideWordsRight(insideTree, constituentsMap, syntaxTree);
 
 		Stack<Tree<String>> foottoroot = new Stack<Tree<String>>();
 
-		foottoroot = VSMUtil.updateFoottorootPath(foottoroot, syntaxTree,
-				insideTree, constituentsMap);
+		foottoroot = VSMUtil.updateFoottorootPath(foottoroot, syntaxTree, insideTree, constituentsMap);
 
-		if (!insideTree.isLeaf()
-				&& insideTree.getLabel().equalsIgnoreCase(nonTerminal)) {
+		if (!insideTree.isLeaf() && insideTree.getLabel().equalsIgnoreCase(nonTerminal)) {
 
 			vectorBean = new FeatureVectorBean();
 
-			psiSyn = new OutsideFeatureVectorImpl().getOutsideFeatureVectorPsi(
-					foottoroot, outsideFeatureDictionary, vectorBean);
+			psiSyn = new OutsideFeatureVectorImpl().getOutsideFeatureVectorPsi(foottoroot, outsideFeatureDictionary,
+					vectorBean);
 
-			phiSyn = new InsideFeatureVectorImpl().getInsideFeatureVectorPhi(
-					insideTree, insideFeatureDictionary, vectorBean);
+			phiSyn = new InsideFeatureVectorImpl().getInsideFeatureVectorPhi(insideTree, insideFeatureDictionary,
+					vectorBean);
 
 			vectorBean.setPhi(phiSyn);
 			vectorBean.setPsi(psiSyn);
